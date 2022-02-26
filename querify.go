@@ -100,6 +100,30 @@ func (r *Record) UnmarshalJSON(b []byte) error {
 	return nil
 }
 
+func (r Record) Set(column string, value Value) Record {
+	if r.Err != nil {
+		return Record{Err: r.Err}
+	}
+
+	found := false
+
+	for i, c := range r.Columns {
+		if c == column {
+			found = true
+			if len(r.Values) <= i {
+				r.Values = append(r.Values, make([]Value, i-len(r.Values)+1)...)
+			}
+			r.Values[i] = value
+		}
+	}
+
+	if !found {
+		return Record{Err: fmt.Errorf("querify: column '%s' not found", column)}
+	}
+
+	return r
+}
+
 func From(table interface{}) Table {
 	b, err := json.Marshal(table)
 	if err != nil {
@@ -263,6 +287,22 @@ func (t Table) Query() Table {
 	return t
 }
 
+func (t Table) Record(index int) Record {
+	if t.Err != nil {
+		return Record{Err: t.Err}
+	}
+
+	record := Record{
+		Columns: append([]string{}, t.Columns...),
+	}
+
+	if index < len(t.Data) {
+		record.Values = t.Data[index]
+	}
+
+	return record
+}
+
 func (t Table) UnionAll(table Table) Table {
 	columnMap := map[string]int{}
 	transform := map[int]int{}
@@ -310,7 +350,7 @@ func (t Table) Join(joins ...Join) Table {
 
 func (t Table) Where(condition Condition) Table {
 	if t.Err != nil {
-		return t
+		return Table{Err: t.Err}
 	}
 
 	n := 0
@@ -333,6 +373,10 @@ func (t Table) Where(condition Condition) Table {
 }
 
 func (t Table) GroupBy(groups ...GroupBy) GroupedTable {
+	if t.Err != nil {
+		return GroupedTable{Err: t.Err}
+	}
+
 	var groupingSets GroupingSets
 
 	for i, g := range groups {
@@ -372,6 +416,83 @@ func (t Table) GroupBy(groups ...GroupBy) GroupedTable {
 
 func (t Table) Select(selects ...Select) SelectedTable {
 	return GroupedTable{Err: t.Err, Source: t}.Select(selects...)
+}
+
+func (t Table) Insert(record Record) Table {
+	if t.Err != nil {
+		return Table{Err: t.Err}
+	}
+
+	n := Record{
+		Columns: t.Columns,
+		Values:  make([]Value, len(t.Columns)),
+	}
+
+	for i, c := range record.Columns {
+		if i < len(record.Values) {
+			n = n.Set(c, record.Values[i])
+		}
+	}
+
+	if n.Err != nil {
+		return Table{Err: n.Err}
+	}
+
+	t.Data = append(t.Data, n.Values)
+
+	return t
+}
+
+func (t Table) Update(record Record, where Condition) Table {
+	if t.Err != nil {
+		return Table{Err: t.Err}
+	}
+
+	for i, d := range t.Data {
+		upd, err := where.Condition(GroupedRecord{Source: Record{Columns: t.Columns, Values: d}})
+		if err != nil {
+			return Table{Err: err}
+		}
+
+		if upd {
+			r := t.Record(i)
+
+			for i, c := range record.Columns {
+				if i < len(record.Values) {
+					r = r.Set(c, record.Values[i])
+				}
+			}
+
+			if r.Err != nil {
+				return Table{Err: r.Err}
+			}
+
+			t.Data[i] = r.Values
+		}
+	}
+
+	return t
+}
+
+func (t Table) Delete(where Condition) Table {
+	if t.Err != nil {
+		return Table{Err: t.Err}
+	}
+
+	for i, d := range t.Data {
+		del, err := where.Condition(GroupedRecord{Source: Record{Columns: t.Columns, Values: d}})
+		if err != nil {
+			return Table{Err: err}
+		}
+
+		if del {
+			copy(t.Data[i:], t.Data[i+1:])
+			t.Data[len(t.Data)-1] = nil
+			t.Data = t.Data[:len(t.Data)-1]
+		}
+	}
+
+	return t
 }
 
 type GroupedRecord struct {

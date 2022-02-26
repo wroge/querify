@@ -1,3 +1,8 @@
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/github.com/wroge/querify)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wroge/querify)](https://goreportcard.com/report/github.com/wroge/querify)
+![golangci-lint](https://github.com/wroge/querify/workflows/golangci-lint/badge.svg)
+[![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/wroge/querify.svg?style=social)](https://github.com/wroge/querify/tags)
+
 # querify
 
 Query your data from and to any json compatible source.

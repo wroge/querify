@@ -956,7 +956,7 @@ func (i Ident) Variable(record SelectedRecord) (Value, error) {
 	for j, c := range record.Source.Columns {
 		if c == string(i) || c[:strings.LastIndex(c, ".")+1] == string(i) {
 			if index != -1 {
-				return nil, fmt.Errorf("linpg: ident '%s' is ambiguous", i)
+				return nil, fmt.Errorf("querify: ident '%s' is ambiguous", i)
 			}
 
 			index = j
@@ -968,7 +968,7 @@ func (i Ident) Variable(record SelectedRecord) (Value, error) {
 		for j, c := range record.Selected.Columns {
 			if c == string(i) || c[:strings.LastIndex(c, ".")+1] == string(i) {
 				if index != -1 {
-					return nil, fmt.Errorf("linpg: ident '%s' is ambiguous", i)
+					return nil, fmt.Errorf("querify: ident '%s' is ambiguous", i)
 				}
 
 				index = j
@@ -977,7 +977,7 @@ func (i Ident) Variable(record SelectedRecord) (Value, error) {
 	}
 
 	if index < 0 {
-		return nil, fmt.Errorf("linpg: ident '%s' not found", i)
+		return nil, fmt.Errorf("querify: ident '%s' not found", i)
 	}
 
 	if index < len(source.Values) {
@@ -995,7 +995,7 @@ func (i Ident) Select(table SelectedTable) (string, []Value, error) {
 	for j, c := range table.Source.Columns {
 		if c == string(i) || c[:strings.LastIndex(c, ".")+1] == string(i) {
 			if index != -1 {
-				return "", nil, fmt.Errorf("linpg: ident '%s' is ambiguous", i)
+				return "", nil, fmt.Errorf("querify: ident '%s' is ambiguous", i)
 			}
 
 			index = j
@@ -1007,7 +1007,7 @@ func (i Ident) Select(table SelectedTable) (string, []Value, error) {
 		for j, c := range table.Selected.Columns {
 			if c == string(i) || c[:strings.LastIndex(c, ".")+1] == string(i) {
 				if index != -1 {
-					return "", nil, fmt.Errorf("linpg: ident '%s' is ambiguous", i)
+					return "", nil, fmt.Errorf("querify: ident '%s' is ambiguous", i)
 				}
 
 				index = j
@@ -1016,7 +1016,7 @@ func (i Ident) Select(table SelectedTable) (string, []Value, error) {
 	}
 
 	if index < 0 {
-		return "", nil, fmt.Errorf("linpg: ident '%s' not found", i)
+		return "", nil, fmt.Errorf("querify: ident '%s' not found", i)
 	}
 
 	values := make([]Value, len(source.Data))
